@@ -46,6 +46,10 @@
 
 .NOTES
 
+2024-12-10:[CREATED]v1.0
+    ask user to input the computer object to query, add trailing $ to user
+        input, get computer object return current user, os version,
+        computer name, objectSID, format table and output to console
 #>
 
 # Prompt user for computer object name
