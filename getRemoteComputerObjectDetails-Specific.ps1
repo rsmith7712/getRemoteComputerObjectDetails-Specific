@@ -39,6 +39,12 @@
     Error Handling: Catches and displays errors if the query fails.
 
 .NOTES
+2024-12-10:[UPDATED]
+    Script now requires domain administrator credentials to be entered before
+        execution begins. The credentials are prompted at the start and reused
+        for subsequent searches. Additionally, it checks for administrator
+        privileges early on to ensure proper permissions.
+
 2024-12-10:[ADDED]
     Script now saves the domain administrator credentials entered during the
         first search and reuses them for subsequent searches. This avoids
@@ -67,9 +73,14 @@
         computer name, objectSID, format table and output to console
 #>
 
-# Initialize variable to store domain administrator credentials
-$domainCreds = $null
+# Require domain administrator credentials before script execution
+$domainCreds = Get-Credential -Message "Enter domain administrator credentials"
 
+# Check if the script is running with administrator privileges
+if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
+    Write-Host "This script requires administrator privileges. Please run as administrator." -ForegroundColor Red
+    exit
+}
 # Function to perform the search
 function Perform-Search {
     # Prompt user for computer object name
@@ -78,15 +89,6 @@ function Perform-Search {
     # Add a trailing $ to the input
     $computerObject = "$computerName$"
 
-    # Require domain administrator credentials if not already provided
-    if (-not $domainCreds) {
-        $domainCreds = Get-Credential -Message "Enter domain administrator credentials"
-    }
-    # Check if the script is running with administrator privileges
-    if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
-        Write-Host "This script requires administrator privileges. Please run as administrator." -ForegroundColor Red
-        exit
-    }
     # Use Get-WmiObject to query the computer for details
     try {
         $computerInfo = Get-WmiObject -Class Win32_ComputerSystem -ComputerName $computerName -Credential $domainCreds
