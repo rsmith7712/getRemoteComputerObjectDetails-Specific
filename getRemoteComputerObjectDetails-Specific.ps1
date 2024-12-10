@@ -46,6 +46,12 @@
 
 .NOTES
 2024-12-10:[UPDATED]
+    Script now prompts the user to enter domain administrator credentials
+        using Get-Credential before proceeding with execution. The provided
+        credentials are used for querying the necessary computer details,
+        ensuring secure and authenticated operations.
+
+2024-12-10:[UPDATED]
     The script now includes a check to ensure it is being run with 
         administrator privileges. If not, it will display a message and 
         exit. This ensures proper permissions for querying computer information
@@ -62,6 +68,9 @@ $computerName = Read-Host -Prompt "Enter the computer object name"
 # Add a trailing $ to the input
 $computerObject = "$computerName$"
 
+# Require domain administrator credentials
+$domainCreds = Get-Credential -Message "Enter domain administrator credentials"
+
 # Check if the script is running with administrator privileges
 if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
     Write-Host "This script requires administrator privileges. Please run as administrator." -ForegroundColor Red
@@ -69,9 +78,9 @@ if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
 }
 # Use Get-WmiObject to query the computer for details
 try {
-    $computerInfo = Get-WmiObject -Class Win32_ComputerSystem -ComputerName $computerName
-    $osInfo = Get-WmiObject -Class Win32_OperatingSystem -ComputerName $computerName
-    $objectSID = (Get-ADComputer -Identity $computerName -Properties ObjectSID).ObjectSID
+    $computerInfo = Get-WmiObject -Class Win32_ComputerSystem -ComputerName $computerName -Credential $domainCreds
+    $osInfo = Get-WmiObject -Class Win32_OperatingSystem -ComputerName $computerName -Credential $domainCreds
+    $objectSID = (Get-ADComputer -Identity $computerName -Properties ObjectSID -Credential $domainCreds).ObjectSID
 
     if ($computerInfo -and $osInfo) {
         # Construct an output object
