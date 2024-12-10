@@ -21,7 +21,7 @@
     IN THE SOFTWARE.
 
 .NAME
-    getRemoteComputerObjectDetails-Specific-v1.ps1
+    getRemoteComputerObjectDetails-Specific.ps1
 
 .DESCRIPTION
     Script takes user input for a computer object name, adds
@@ -45,9 +45,13 @@
         query fails.
 
 .NOTES
-
-2024-12-10:[CREATED]v1.0
-    ask user to input the computer object to query, add trailing $ to user
+2024-12-10:[UPDATED]
+    The script now includes a check to ensure it is being run with 
+        administrator privileges. If not, it will display a message and 
+        exit. This ensures proper permissions for querying computer information
+        
+2024-12-10:[CREATED]
+    Ask user to input the computer object to query, add trailing $ to user
         input, get computer object return current user, os version,
         computer name, objectSID, format table and output to console
 #>
@@ -58,6 +62,11 @@ $computerName = Read-Host -Prompt "Enter the computer object name"
 # Add a trailing $ to the input
 $computerObject = "$computerName$"
 
+# Check if the script is running with administrator privileges
+if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
+    Write-Host "This script requires administrator privileges. Please run as administrator." -ForegroundColor Red
+    exit
+}
 # Use Get-WmiObject to query the computer for details
 try {
     $computerInfo = Get-WmiObject -Class Win32_ComputerSystem -ComputerName $computerName
@@ -72,7 +81,6 @@ try {
             OSVersion    = $osInfo.Caption
             ObjectSID    = $objectSID
         }
-
         # Output as a formatted table
         $output | Format-Table -AutoSize
     } else {
