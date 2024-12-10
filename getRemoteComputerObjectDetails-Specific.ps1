@@ -31,30 +31,33 @@
 
 .FUNCTIONALITY
     User Input: Prompts the user for a computer object name using Read-Host.
-    Add Trailing $: Appends a $ to the input to match naming conventions for
-        computer objects.
+    Add Trailing $: Appends a $ to the input to match naming conventions for computer objects.
     Query Computer Details:
-        -Win32_ComputerSystem retrieves the computer name and current
-            logged-in user.
+        -Win32_ComputerSystem retrieves the computer name and current logged-in user.
         -Win32_OperatingSystem retrieves the OS version.
-        -Get-ADComputer retrieves the ObjectSID of the computer object from
-            Active Directory.
+        -Get-ADComputer retrieves the ObjectSID of the computer object from Active Directory.
     Error Handling: Catches and displays errors if the query fails.
 
 .NOTES
-2024-12-10:[UPDATED]
+2024-12-10:[ADDED]
+    Script now saves the domain administrator credentials entered during the
+        first search and reuses them for subsequent searches. This avoids
+        prompting the user to re-enter credentials until they choose to exit or
+        close the console window.
+        
+2024-12-10:[ADDED]
     Script now includes functionality to ask the user if they want to perform
         another search after displaying the results. If the user enters anything
         other than "y" or "yes," the script exits to the console prompt.
         
-2024-12-10:[UPDATED]
+2024-12-10:[ADDED]
     Script now prompts the user to enter domain administrator credentials
         using Get-Credential before proceeding with execution. The provided
         credentials are used for querying the necessary computer details,
         ensuring secure and authenticated operations.
 
-2024-12-10:[UPDATED]
-    The script now includes a check to ensure it is being run with 
+2024-12-10:[ADDED]
+    Script now includes a check to ensure it is being run with 
         administrator privileges. If not, it will display a message and 
         exit. This ensures proper permissions for querying computer information
         
@@ -64,6 +67,9 @@
         computer name, objectSID, format table and output to console
 #>
 
+# Initialize variable to store domain administrator credentials
+$domainCreds = $null
+
 # Function to perform the search
 function Perform-Search {
     # Prompt user for computer object name
@@ -72,9 +78,10 @@ function Perform-Search {
     # Add a trailing $ to the input
     $computerObject = "$computerName$"
 
-    # Require domain administrator credentials
-    $domainCreds = Get-Credential -Message "Enter domain administrator credentials"
-
+    # Require domain administrator credentials if not already provided
+    if (-not $domainCreds) {
+        $domainCreds = Get-Credential -Message "Enter domain administrator credentials"
+    }
     # Check if the script is running with administrator privileges
     if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
         Write-Host "This script requires administrator privileges. Please run as administrator." -ForegroundColor Red
@@ -94,7 +101,6 @@ function Perform-Search {
                 OSVersion    = $osInfo.Caption
                 ObjectSID    = $objectSID
             }
-
             # Output as a formatted table
             $output | Format-Table -AutoSize
         } else {
